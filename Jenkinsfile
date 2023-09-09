@@ -1,33 +1,40 @@
 pipeline {
     agent any
-
     stages {
-        stage('Clean') {
-            steps {
-                // Supprime le répertoire de destination s'il existe déjà
-                bat 'rmdir /s /q jkstest'
-            }
-        }
-
         stage('Clone') {
             steps {
-                // Clone the Git repository
-                bat 'git clone https://github.com/Mariamatambedou/jkstest.git'
+                // Clonez le dépôt Git
+                bat 'git clone https://github.com/Mariamatambedou/pipelinejks.git pipelinejks'
             }
         }
 
         stage('Build') {
             steps {
-                // Compile your Java code with the full path to Main.java
-                bat 'javac jkstest/Main.java'
+                // Construisez votre projet Spring Boot avec Maven
+                bat 'mvn clean install -f pipelinejks/pom.xml'
+            }
+        }
+
+        stage('Archive JAR') {
+            steps {
+                // Archive the JAR file as an artifact
+                archiveArtifacts artifacts: 'pipelinejks/target/*.jar', allowEmptyArchive: true
             }
         }
 
         stage('Run') {
             steps {
-                // Run your Java program
-                bat 'java -cp jkstest Main'
+                // Exécutez votre application Spring Boot avec le nouveau port
+                bat 'java -jar pipelinejks/target/demo-0.0.1-SNAPSHOT.jar --server.port=8081'
             }
         }
+
+        stage('Test') {
+           steps {
+        // Exécutez les tests Maven par défaut
+            bat 'mvn test -f pipelinejks/pom.xml'
+            }
+        }
+
     }
-}
+    }
